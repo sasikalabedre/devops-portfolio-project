@@ -1,0 +1,59 @@
+﻿name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ap-southeast-2
+  ECR_REGISTRY: 939169264693.dkr.ecr.ap-southeast-2.amazonaws.com
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build API image
+        run: docker build -t devops-api:latest ./api
+
+      - name: Build Frontend image
+        run: docker build -t devops-frontend:latest ./frontend
+
+      - name: Run Trivy scan on API
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: devops-api:latest
+          format: sarif
+          output: trivy-api-results.sarif
+
+      - name: Run Trivy scan on Frontend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: devops-frontend:latest
+          format: sarif
+          output: trivy-frontend-results.sarif
+
+      - name: Push API image to ECR
+        run: |
+          docker tag devops-api:latest ${{ env.ECR_REGISTRY }}/devops-api:latest
+          docker push ${{ env.ECR_REGISTRY }}/devops-api:latest
+
+      - name: Push Frontend image to ECR
+        run: |
+          docker tag devops-frontend:latest ${{ env.ECR_REGISTRY }}/devops-frontend:latest
+          docker push ${{ env.ECR_REGISTRY }}/devops-frontend:latest
