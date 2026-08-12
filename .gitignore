@@ -1,0 +1,29 @@
+﻿# Build files
+__pycache__/
+*.pyc
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# Trivy results
+trivy-results.json
+
+# Docker
+.dockerignore
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
